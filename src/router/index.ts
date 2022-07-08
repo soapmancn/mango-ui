@@ -3,19 +3,46 @@ import {createRouter, createWebHashHistory} from 'vue-router'
 
 // 引入需要路由的组件
 const Login = () => import("../views/Login.vue")
+const User = () => import("../views/User.vue")
 const Home = () => import("../views/Home.vue")
-const HelloWorld = () => import("../views/HelloWorld.vue")
-const Page404 = () => import("../views/404.vue")
+const Dept = () => import("../views/Dept.vue")
 
 // 路由配置
 const routes = [
-    { path: "/", component: Home },
-    { path: "/login", component: Login },
-    { path: "/helloworld", component: HelloWorld },
-    { path: "/404", component: Page404 },
+    { path: "/", component: Home ,
+        children: [
+            {
+                path: "/user",
+                meta: {
+                    isShow: true,
+                    title: "用户列表"
+                },
+                component: User
+            },
+            {
+                path: "/dept",
+                meta: {
+                    isShow: true,
+                    title: "机构列表"
+                },
+                component: Dept
+            }]
+    },
+    { path: "/login", component: Login }
 ]
 
 export const router = createRouter({
     history: createWebHashHistory(),
     routes
+})
+
+//路由拦截
+router.beforeEach(to => {
+    const token = localStorage.getItem('token')
+    if (!token && to.path !== '/login'){
+        return '/login'
+    }
+    if (token && to.path == '/login'){
+        return '/'
+    }
 })

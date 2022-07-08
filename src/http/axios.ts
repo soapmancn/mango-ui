@@ -1,40 +1,65 @@
-import axios from "axios";
+import axios from 'axios'
 import config from "./config";
 import {router} from "../router";
-import Cookies from "js-cookie";
 
-export default function $axios() {
+
+export  const request =(options:any)=> {
     return new Promise((resolve, reject) => {
+
+        // create an axios instance
         const instance = axios.create({
             baseURL: config.baseUrl,
-            headers: config.headers,
             timeout: config.timeout,
+            headers: config.headers,
             withCredentials: config.withCredentials
         })
-        //request 请求拦截
+
+        // request interceptor
         instance.interceptors.request.use(
-            config => {
-                let token = Cookies.get('token')
-                if (token){ //发送请求时携带token
-                    config.headers.token = token
+            (config:any) => {
+                let token = localStorage.getItem('token') //此处换成自己获取回来的token，通常存在在cookie或者store里面
+                if (token) {
+                    // 让每个请求携带token
+                    config.headers['token'] = token
                 } else {
-                    router.push('/login')
+                    router.push('/login').then()
                 }
                 return config
             },
             error => {
-                return Promise.reject(error)
+                // Do something with request error
+                console.log("出错啦", error) // for debug
+                Promise.reject(error).then()
             }
         )
-        //相应拦截器
+
+        // response interceptor
         instance.interceptors.response.use(
-            response => {
-                return response.data
+            (response:any) => {
+                if (response.data.code == 200 || response.config.responseType == 'blob'){
+                    return response.data
+                } else {
+                    alert(response.data.msg)
+                    localStorage.removeItem("token")
+                    router.push('/login').then()
+                }
             },
             error => {
+                console.log('err' + error) // for debug
+                alert("出错啦^.^")
                 return Promise.reject(error)
             }
         )
 
+        // 请求处理
+        instance(options)
+            .then((res) => {
+                resolve(res)
+            })
+            .catch((error) => {
+                reject(error)
+            })
     })
 }
+
+export default request
